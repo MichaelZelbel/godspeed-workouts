@@ -16,12 +16,15 @@ jobs:
         with:
           repository: MichaelZelbel/godspeed-mission-control
           path: product
+      # Outside this repository, or the product's CommonJS tools would read this package.json's
+      # "type": "module" and the notebook would not start.
+      - run: mv product "$RUNNER_TEMP/product"
       - uses: actions/setup-node@v4
         with:
           node-version: "22.19"
       - run: node --test "test/*.test.mjs"
         env:
-          GODSPEED_NOTEBOOK_CHECKOUT: ${{ github.workspace }}/product
+          GODSPEED_NOTEBOOK_CHECKOUT: ${{ runner.temp }}/product
   others:
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     strategy:
