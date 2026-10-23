@@ -1,0 +1,6 @@
+node_modules/
+*.tmp
+.DS_Store
+# A person's key, workouts and records never belong here: the state folder lives outside the repository.
+state/
+*.env
