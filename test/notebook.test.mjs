@@ -51,6 +51,11 @@ test("a real notebook: the tracker, edits and deletes through events, the person
   const nb = await startNotebook();
   const w = await world({ notebook: nb });
   try {
+    // The installation's time zone, as Godspeed's setup keeps it: the rows follow it, whatever
+    // zone this machine is in.
+    const inst = (await nb.query({ table: "settings", operation: "select", filters: [["eq", "id", "installation"]] }))[0];
+    if (inst) await nb.query({ table: "settings", operation: "update", values: { timezone: "Europe/Berlin" }, filters: [["eq", "id", "installation"]], expected: { installation: inst._hash } });
+    else await nb.query({ table: "settings", operation: "insert", values: { id: "installation", timezone: "Europe/Berlin" } });
     const neck = w.hevy.add(workout({ start: "2026-10-23T22:52:48Z", minutes: 10, title: "Neck workout", exercises: [{ title: "Cervical extension", sets: [{ reps: 40, kg: 10 }] }, { title: "Neck flexion", sets: [{ reps: 10, kg: 10 }] }] }));
     const legs = w.hevy.add(workout({ start: "2026-10-22T17:00:00Z", title: "Leg day", exercises: [{ title: "Squat (Barbell)", sets: [{ reps: 5, kg: 100, type: "warmup" }, { reps: 5, kg: 120, rpe: 8.5 }] }] }));
     const r = await w.run();
