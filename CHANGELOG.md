@@ -1,5 +1,13 @@
 # Changes
 
+## 0.1.1 (24 October 2026)
+
+- Hevy's real answers where they differ from its documentation: with no events since the last run
+  it answers an empty "workouts" list instead of an empty "events" list, and a page past the last is
+  404 "Page not found". Both are now read as "nothing"; any other unexpected answer is still a
+  change that stops the run and, when it lasts, is said once. Found by the first hourly run on the
+  server; the pretend Hevy in the tests now answers the same way.
+
 ## 0.1.0 (24 October 2026)
 
 - Hevy as the first source: every workout becomes one row of the notebook's Workouts tracker, with

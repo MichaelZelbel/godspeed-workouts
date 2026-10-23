@@ -33,6 +33,12 @@ test("backfill: every workout once, over several pages, one row each, keyed by H
     const again = await w.run();
     assert.match(again.summary, /^events: 0 added, 0 changed, 0 removed/);
     assert.equal(w.nb.writes.length, before);
+    // An hour later there is no event at all since the last run: Hevy's own empty answer.
+    w.now.hours(1);
+    const quiet = await w.run();
+    assert.equal(quiet.ok, true, quiet.summary);
+    assert.equal(w.hevy.calls.at(-1).path, "/v1/workouts/events");
+    assert.equal(w.nb.writes.length, before);
     assert.deepEqual(w.told, []);
   } finally { await w.close(); }
 });

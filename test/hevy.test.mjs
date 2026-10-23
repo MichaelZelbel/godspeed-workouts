@@ -17,6 +17,24 @@ test("pages are followed to Hevy's page count; events come oldest first, the las
   } finally { await fh.close(); }
 });
 
+test("Hevy's real answers where they differ from its documentation: no events, a page past the end", async () => {
+  const fh = await startFakeHevy();
+  try {
+    const h = new Hevy({ key: KEY, base: fh.url, pauseMs: 0 });
+    fh.add(workout({ start: "2026-10-01T10:00:00Z" }));
+    // Nothing since then: {"page":1,"page_count":1,"workouts":[]}.
+    assert.deepEqual(await h.eventsSince("2099-01-01T00:00:00Z"), []);
+    // A page past the last: 404 {"error":"Page not found"}.
+    assert.deepEqual((await h.workoutsPage(5)).workouts, []);
+  } finally { await fh.close(); }
+  // An events answer with workouts in it but no events list is not the known empty answer.
+  const odd = async () => new Response(JSON.stringify({ page: 1, page_count: 1, workouts: [{ id: "w1" }] }), { status: 200 });
+  await assert.rejects(new Hevy({ key: KEY, fetchImpl: odd, pauseMs: 0 }).eventsSince("2026-01-01T00:00:00Z"), (e) => e.kind === "changed");
+  // An endpoint that is gone (Express's own 404) is a change, not an empty page.
+  const gone = async () => new Response("Cannot GET /v1/workouts/events", { status: 404 });
+  await assert.rejects(new Hevy({ key: KEY, fetchImpl: gone, pauseMs: 0 }).eventsSince("2026-01-01T00:00:00Z"), (e) => e.kind === "changed");
+});
+
 test("a refused key, a server error and an answer of an unknown shape are three different things", async () => {
   const fh = await startFakeHevy();
   try {

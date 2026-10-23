@@ -16,6 +16,9 @@ const user = await hevy.userInfo();
 const all = await hevy.allWorkouts();
 const count = await hevy.count();
 const since = await hevy.eventsSince("2026-10-01T00:00:00Z");
+// The answer an hourly run gets most often: nothing since the last run.
+const none = await hevy.eventsSince(new Date().toISOString());
+if (none.length) { console.log("FAIL events since now are not empty"); process.exit(1); }
 console.log(`account units ${user.weight}/${user.distance}, Hevy Pro ${user.pro}; ${all.length} workout(s) listed, count says ${count}; ${since.length} event(s) since 1 October`);
 for (const w of all) console.log(JSON.stringify({ id: w.id, ...rowData(w, { tz, units: user }) }, null, 1));
 if (args.includes("--expect-neck")) {

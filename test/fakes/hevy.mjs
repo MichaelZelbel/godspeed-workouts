@@ -23,15 +23,20 @@ export async function startFakeHevy({ key = KEY, clock = () => new Date() } = {}
     const page = Number(url.searchParams.get("page") || 1), size = Number(url.searchParams.get("pageSize") || 10);
     if (size > 10) return send(400, "Invalid page size");
     const shape = (w) => (fh.changed ? (({ exercises, ...rest }) => rest)(w) : w);
+    // As the real one answers: a page past the last is 404 "Page not found"; no events at all is
+    // one page holding an empty "workouts" list (not "events", whatever the documentation says).
     const paged = (list, name) => {
-      const page_count = Math.ceil(list.length / size);
+      if (name === "events" && !list.length) return { page: 1, page_count: 1, workouts: [] };
+      const page_count = Math.max(1, Math.ceil(list.length / size));
+      if (page > page_count) return null;
       return { page, page_count, [name]: list.slice((page - 1) * size, page * size) };
     };
+    const pagedOr404 = (list, name) => { const j = paged(list, name); return j ? send(200, j) : send(404, { error: "Page not found" }); };
     if (url.pathname === "/v1/user/info") return send(200, { data: { id: "user-1", username: "alex", name: "Alex Example", url: "https://hevy.com/user/alex", weight_unit: fh.unit === "lb" ? "lbs" : "kg", distance_unit: "kilometers", is_pro: true } });
     if (url.pathname === "/v1/workouts/count") return send(200, { workout_count: workouts.size });
     if (url.pathname === "/v1/workouts") {
       const list = [...workouts.values()].sort((a, b) => b.start_time.localeCompare(a.start_time)).map(shape);
-      return send(200, paged(list, "workouts"));
+      return pagedOr404(list, "workouts");
     }
     if (url.pathname === "/v1/workouts/events") {
       const since = Date.parse(url.searchParams.get("since") || "1970-01-01T00:00:00Z");
@@ -39,7 +44,7 @@ export async function startFakeHevy({ key = KEY, clock = () => new Date() } = {}
       const latest = new Map();
       for (const e of events) if (Date.parse(e.at) >= since) latest.set(e.id, e);
       const list = [...latest.values()].sort((a, b) => b.at.localeCompare(a.at)).map((e) => (e.type === "updated" ? { type: "updated", workout: shape(workouts.get(e.id) || e.workout) } : { type: "deleted", id: e.id, deleted_at: e.at }));
-      return send(200, paged(list, "events"));
+      return pagedOr404(list, "events");
     }
     return send(404, "Not found");
   });
