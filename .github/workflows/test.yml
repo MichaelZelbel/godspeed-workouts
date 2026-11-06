@@ -1,5 +1,5 @@
-# Private repository minutes cost money: every push runs the fast tests and the real-notebook test
-# on Linux only; Windows and macOS run by hand and on version tags.
+# Every push runs the fast tests and the real-notebook test on Linux; Windows and macOS run by hand
+# and on version tags.
 name: test
 on:
   push:

@@ -1,5 +1,15 @@
 # Changes
 
+## 0.1.2 (6 November 2026)
+
+- Ready to be public. No change to what the add-on does. Every workout in the README, the tests
+  and the live check is made up, and the live check (`test/live/hevy-read.mjs`) takes the title of
+  any workout to look for with `--expect "<title>"` instead of one fixed workout. No path of one
+  person's computer is left: the installers look for Godspeed in its documented default folders
+  (`~/godspeed-v2`, `~/godspeed`, or the folder named by `--godspeed`), and the tests use an
+  example path. The README points to Godspeed's Settings as the way in. The full history was
+  scanned for secrets (gitleaks 8.30.1, every commit on every branch, none found).
+
 ## 0.1.1 (24 October 2026)
 
 - Hevy's real answers where they differ from its documentation: with no events since the last run

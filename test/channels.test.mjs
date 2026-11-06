@@ -43,6 +43,6 @@ test("where messages go: the setting, else Telegram on a server and notification
   assert.deepEqual(tellOf({ tell: ["desktop", "telegram"] }), ["desktop", "telegram"]);
   assert.deepEqual(tellOf({ tell: null }, { platform: "linux", env: {} }), ["telegram"]);
   assert.deepEqual(tellOf({ tell: null }, { platform: "win32", env: {} }), ["desktop"]);
-  assert.equal(validTelegramEnv("/root/godspeed/.godspeed/integrated-runtime/hermes/.env"), true);
-  assert.equal(validTelegramEnv("/root/godspeed/secrets/.env"), false);
+  assert.equal(validTelegramEnv("/home/example/godspeed/.godspeed/integrated-runtime/hermes/.env"), true);
+  assert.equal(validTelegramEnv("/home/example/godspeed/secrets/.env"), false);
 });

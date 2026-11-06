@@ -11,10 +11,12 @@ second source later.
   against a real Godspeed notebook when `GODSPEED_NOTEBOOK_CHECKOUT` names a checkout of the product
   (MichaelZelbel/godspeed-mission-control); without it that part is skipped and says so.
   `node test/live/hevy-read.mjs` reads the person's real Hevy account (read only) with
-  `HEVY_API_KEY` in the environment.
-- CI costs money (a private repository): every push runs the fast tests on Linux only; Windows and
-  macOS run by hand (workflow_dispatch) and on version tags. A red run is a real failure: keep main
-  green.
+  `HEVY_API_KEY` in the environment (`--expect "<workout title>"` also checks that a workout with
+  that title is there).
+- CI: this repository is public, so its minutes are free. Every push runs the fast tests and the
+  real-notebook test on Linux; Windows and macOS run by hand (workflow_dispatch) and on version
+  tags, and may be added to every push once they have been seen passing. A red run is a real
+  failure: keep main green.
 
 House rules:
 

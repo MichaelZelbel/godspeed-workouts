@@ -56,7 +56,7 @@ test("a real notebook: the tracker, edits and deletes through events, the person
     const inst = (await nb.query({ table: "settings", operation: "select", filters: [["eq", "id", "installation"]] }))[0];
     if (inst) await nb.query({ table: "settings", operation: "update", values: { timezone: "Europe/Berlin" }, filters: [["eq", "id", "installation"]], expected: { installation: inst._hash } });
     else await nb.query({ table: "settings", operation: "insert", values: { id: "installation", timezone: "Europe/Berlin" } });
-    const neck = w.hevy.add(workout({ start: "2026-10-23T22:52:48Z", minutes: 10, title: "Neck workout", exercises: [{ title: "Cervical extension", sets: [{ reps: 40, kg: 10 }] }, { title: "Neck flexion", sets: [{ reps: 10, kg: 10 }] }] }));
+    const upper = w.hevy.add(workout({ start: "2026-10-23T16:05:48Z", minutes: 50, title: "Upper body", exercises: [{ title: "Bench press", sets: [{ reps: 8, kg: 60 }] }, { title: "Row", sets: [{ reps: 10, kg: 50 }] }] }));
     const legs = w.hevy.add(workout({ start: "2026-10-22T17:00:00Z", title: "Leg day", exercises: [{ title: "Squat (Barbell)", sets: [{ reps: 5, kg: 100, type: "warmup" }, { reps: 5, kg: 120, rpe: 8.5 }] }] }));
     const r = await w.run();
     assert.equal(r.ok, true, r.summary);
@@ -69,11 +69,11 @@ test("a real notebook: the tracker, edits and deletes through events, the person
     assert.equal(t.cadence, "any");
     assert.deepEqual(t.talks, []);
     assert.equal(t.status, "active");
-    const row = (await nb.rows()).find((x) => x.source_id === neck.id);
-    assert.equal(row.title, "2026-10-24 00:52");
+    const row = (await nb.rows()).find((x) => x.source_id === upper.id);
+    assert.equal(row.title, "2026-10-23 18:05");
     assert.deepEqual(Object.fromEntries(Object.entries(row.data)), {
-      when: "2026-10-24 00:52", workout: "Neck workout", end: "2026-10-24 01:02", minutes: 10,
-      exercises: "Cervical extension: 40 x 10 kg\nNeck flexion: 10 x 10 kg", sets: 2, volume: 500,
+      when: "2026-10-23 18:05", workout: "Upper body", end: "2026-10-23 18:55", minutes: 50,
+      exercises: "Bench press: 8 x 60 kg\nRow: 10 x 50 kg", sets: 2, volume: 980,
     });
     // Its file, where the notebook keeps trackers.
     assert.ok(fs.existsSync(path.join(nb.ws, "notebook", "Collections", "Workouts.md")));
@@ -85,23 +85,23 @@ test("a real notebook: the tracker, edits and deletes through events, the person
     const forTalk = await nb.op({ type: "tracker-list", talk: "health", days: 30 });
     const seen = forTalk.trackers.find((x) => x.name === "Workouts");
     assert.equal(seen.recent.length, 2, "the health talk reads both workouts");
-    assert.ok(seen.recent.some((x) => x.data.exercises === "Cervical extension: 40 x 10 kg\nNeck flexion: 10 x 10 kg"));
+    assert.ok(seen.recent.some((x) => x.data.exercises === "Bench press: 8 x 60 kg\nRow: 10 x 50 kg"));
 
     // The person changes the title in the table (only that cell is written, as the table does) and
     // writes a comment; then Hevy edits the workout and deletes the other one.
-    const before = (await nb.rows()).find((x) => x.source_id === neck.id);
-    await nb.query({ table: "collection_items", operation: "update", values: { data: { ...before.data, workout: "Neck, first try", comment: "Felt it the next day." } }, filters: [["eq", "id", before.id]], expected: { [before.id]: before._hash } });
+    const before = (await nb.rows()).find((x) => x.source_id === upper.id);
+    await nb.query({ table: "collection_items", operation: "update", values: { data: { ...before.data, workout: "Upper body, first try", comment: "Felt it the next day." } }, filters: [["eq", "id", before.id]], expected: { [before.id]: before._hash } });
     w.now.hours(1);
-    w.hevy.edit(neck.id, { description: "Slow reps", exercises: [{ index: 0, title: "Cervical extension", notes: null, superset_id: null, sets: [{ index: 0, type: "normal", weight_kg: 12.5, reps: 30, distance_meters: null, duration_seconds: null, rpe: null, custom_metric: null }] }] });
+    w.hevy.edit(upper.id, { description: "Slow reps", exercises: [{ index: 0, title: "Bench press", notes: null, superset_id: null, sets: [{ index: 0, type: "normal", weight_kg: 62.5, reps: 6, distance_meters: null, duration_seconds: null, rpe: null, custom_metric: null }] }] });
     w.hevy.remove(legs.id);
     const r2 = await w.run();
     assert.equal(r2.ok, true, r2.summary);
     assert.match(r2.summary, /1 changed, 1 removed/);
     const after = await nb.rows();
     assert.equal(after.length, 1);
-    assert.equal(after[0].data.workout, "Neck, first try");
+    assert.equal(after[0].data.workout, "Upper body, first try");
     assert.equal(after[0].data.comment, "Felt it the next day.");
-    assert.equal(after[0].data.exercises, "Cervical extension: 30 x 12.5 kg");
+    assert.equal(after[0].data.exercises, "Bench press: 6 x 62.5 kg");
     assert.equal(after[0].data.notes, "Slow reps");
     assert.equal(after[0].data.volume, 375);
     // The tracker card still names the talk (the add-on never touches the card).

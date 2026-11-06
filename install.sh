@@ -34,7 +34,7 @@ main() {
   if [ -f "$HOME/.godspeed/device.env" ]; then gs="$(sed -n 's/^[[:space:]]*GODSPEED_DIR=//p' "$HOME/.godspeed/device.env" | head -n 1 | tr -d \"\')"; fi
   for c in "$(command -v node 2>/dev/null || true)" \
            $(ls -d /usr/local/lib/nodejs/node-v*/bin/node 2>/dev/null | sort -r) \
-           $(for d in "$gs" "$HOME/godspeed" "$HOME/godspeed-v2" /root/godspeed; do [ -n "$d" ] && ls -d "$d"/.godspeed/integrated-runtime/runtime/node-v*/bin/node 2>/dev/null; done | sort -r) \
+           $(for d in "$gs" "$HOME/godspeed" "$HOME/godspeed-v2"; do [ -n "$d" ] && ls -d "$d"/.godspeed/integrated-runtime/runtime/node-v*/bin/node 2>/dev/null; done | sort -r) \
            $(ls -d "$HOME"/.hermes/tools/node-*/bin/node 2>/dev/null | sort -r) \
            $(ls -d "$HOME"/.nvm/versions/node/*/bin/node 2>/dev/null | sort -r) \
            /opt/homebrew/bin/node /usr/local/bin/node /usr/bin/node; do
