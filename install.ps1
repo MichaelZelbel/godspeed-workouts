@@ -4,7 +4,7 @@
 #
 # With options for the setup:
 #
-#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/MichaelZelbel/godspeed-workouts/main/install.ps1))) --godspeed C:\godspeed
+#   & ([scriptblock]::Create((irm https://raw.githubusercontent.com/MichaelZelbel/godspeed-workouts/main/install.ps1))) --godspeed $env:USERPROFILE\godspeed-v2
 #
 # $env:HEVY_API_KEY gives the key without a question. It finds Node.js 22 or newer (on the PATH, or
 # the one Godspeed's installer brought), downloads the newest release (main when there is none, or
@@ -21,7 +21,7 @@ function Get-NodeMajor($exe) {
 $candidates = @()
 $onPath = Get-Command node -ErrorAction SilentlyContinue
 if ($onPath) { $candidates += $onPath.Source }
-foreach ($d in @("$env:USERPROFILE\godspeed", "$env:USERPROFILE\godspeed-v2", 'C:\godspeed')) {
+foreach ($d in @("$env:USERPROFILE\godspeed", "$env:USERPROFILE\godspeed-v2")) {
   $candidates += Get-ChildItem -Path "$d\.godspeed\integrated-runtime\runtime" -Filter node.exe -Recurse -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | ForEach-Object FullName
 }
 $candidates += "$env:ProgramFiles\nodejs\node.exe"

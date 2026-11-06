@@ -12,7 +12,7 @@ The notebook gets a tracker called **Workouts**, one row per workout:
 
 | Started | Workout | Ended | Minutes | Exercises and sets | Sets | Volume | Notes | Your comment |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2026-10-24 00:52 | Neck workout | 2026-10-24 01:02 | 10 | Cervical extension: 40 x 10 kg<br>Neck flexion: 10 x 10 kg | 2 | 500 kg | | |
+| 2026-10-23 18:05 | Upper body | 2026-10-23 18:55 | 50 | Bench press: 8 x 60 kg<br>Row: 10 x 50 kg | 2 | 980 kg | | |
 
 - Times are your wall clock, in your notebook's time zone.
 - Every exercise in Hevy's order, every set as reps x weight. A warm-up says "warm-up", a drop set
@@ -23,6 +23,10 @@ The notebook gets a tracker called **Workouts**, one row per workout:
 - "Your comment" is yours. Nothing ever writes it.
 
 ## Install
+
+Newer versions of Godspeed Mission Control carry this add-on themselves: paste your Hevy key in
+Godspeed's Settings, and everything below is done for you. The install line is for people whose
+Godspeed does not carry it, or who want it by hand.
 
 You need Godspeed Mission Control, Hevy Pro (Hevy's connection for other apps is part of Pro) and
 Node.js 22 or newer, which Godspeed brings.

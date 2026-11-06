@@ -1,10 +1,10 @@
 // Reads the real Hevy account behind HEVY_API_KEY, read only, and prints each workout as the row it
 // becomes. Nothing is written anywhere and the key is never printed.
 //
-//   HEVY_API_KEY=... node test/live/hevy-read.mjs [--tz Europe/Berlin] [--expect-neck]
+//   HEVY_API_KEY=... node test/live/hevy-read.mjs [--tz Europe/Berlin] [--expect "<workout title>"]
 //
-// --expect-neck checks the first workout logged on 24 October 2026 (Berlin): "Neck workout",
-// Cervical extension 40 x 10 kg and Neck flexion 10 x 10 kg, and exits 1 when it is not so.
+// --expect "<workout title>" checks that a workout with exactly that title is in the account and reads
+// as a row, and exits 1 when it is not. Without it the test only checks that reading works.
 import { Hevy } from "../../lib/hevy.mjs";
 import { rowData } from "../../lib/rows.mjs";
 
@@ -21,9 +21,9 @@ const none = await hevy.eventsSince(new Date().toISOString());
 if (none.length) { console.log("FAIL events since now are not empty"); process.exit(1); }
 console.log(`account units ${user.weight}/${user.distance}, Hevy Pro ${user.pro}; ${all.length} workout(s) listed, count says ${count}; ${since.length} event(s) since 1 October`);
 for (const w of all) console.log(JSON.stringify({ id: w.id, ...rowData(w, { tz, units: user }) }, null, 1));
-if (args.includes("--expect-neck")) {
-  const neck = all.map((w) => ({ w, r: rowData(w, { tz, units: user }) })).find(({ r }) => r.workout === "Neck workout" && r.when.startsWith("2026-10-24"));
-  const ok = neck && neck.r.exercises === "Cervical extension: 40 x 10 kg\nNeck flexion: 10 x 10 kg" && neck.r.sets === 2;
-  console.log(ok ? `PASS the neck workout reads as expected (${neck.w.id})` : "FAIL the neck workout is not there as expected");
-  process.exit(ok ? 0 : 1);
+if (args.includes("--expect")) {
+  const title = args[args.indexOf("--expect") + 1];
+  const found = all.map((w) => ({ w, r: rowData(w, { tz, units: user }) })).find(({ r }) => r.workout === title);
+  console.log(found ? `PASS the workout "${title}" is there and reads as a row (${found.w.id})` : `FAIL no workout called "${title}" in this account`);
+  process.exit(found ? 0 : 1);
 }

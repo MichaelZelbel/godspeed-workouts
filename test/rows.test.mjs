@@ -4,27 +4,27 @@ import { rowData, setText, durationText, same, fieldsFor, trackerShape, OWNED } 
 import { DEFAULTS } from "../lib/settings.mjs";
 import { checkWorkout } from "../lib/hevy.mjs";
 
-// The shape Hevy answered on 24 October 2026, with a made-up workout in it.
-const neck = {
-  id: "00000000-0000-4000-8000-000000000001", title: "Neck workout", routine_id: "00000000-0000-4000-8000-0000000000aa", description: "",
-  start_time: "2026-10-23T22:52:48+00:00", end_time: "2026-10-23T23:02:55+00:00",
-  updated_at: "2026-10-23T23:02:57.762Z", created_at: "2026-10-23T23:02:57.762Z",
+// The shape Hevy answers, with a made-up workout in it.
+const upperBody = {
+  id: "00000000-0000-4000-8000-000000000001", title: "Upper body", routine_id: "00000000-0000-4000-8000-0000000000aa", description: "",
+  start_time: "2026-03-14T17:05:48+00:00", end_time: "2026-03-14T17:55:55+00:00",
+  updated_at: "2026-03-14T17:55:57.762Z", created_at: "2026-03-14T17:55:57.762Z",
   exercises: [
-    { index: 0, title: "Cervical extension", notes: null, exercise_template_id: "a", superset_id: null, sets: [{ index: 0, type: "normal", weight_kg: 10, reps: 40, distance_meters: null, duration_seconds: null, rpe: null, custom_metric: null }] },
-    { index: 1, title: "Neck flexion", notes: null, exercise_template_id: "b", superset_id: null, sets: [{ index: 0, type: "normal", weight_kg: 10, reps: 10, distance_meters: null, duration_seconds: null, rpe: null, custom_metric: null }] },
+    { index: 0, title: "Bench press", notes: null, exercise_template_id: "a", superset_id: null, sets: [{ index: 0, type: "normal", weight_kg: 60, reps: 8, distance_meters: null, duration_seconds: null, rpe: null, custom_metric: null }] },
+    { index: 1, title: "Row", notes: null, exercise_template_id: "b", superset_id: null, sets: [{ index: 0, type: "normal", weight_kg: 50, reps: 10, distance_meters: null, duration_seconds: null, rpe: null, custom_metric: null }] },
   ],
 };
 
 test("a workout becomes one row: the wall clock in the person's zone, every set as reps x kg", () => {
-  checkWorkout(neck);
-  assert.deepEqual(rowData(neck, { tz: "Europe/Berlin", units: { weight: "kg", distance: "km" } }), {
-    when: "2026-10-24 00:52",
-    workout: "Neck workout",
-    end: "2026-10-24 01:02",
-    minutes: 10,
-    exercises: "Cervical extension: 40 x 10 kg\nNeck flexion: 10 x 10 kg",
+  checkWorkout(upperBody);
+  assert.deepEqual(rowData(upperBody, { tz: "Europe/Berlin", units: { weight: "kg", distance: "km" } }), {
+    when: "2026-03-14 18:05",
+    workout: "Upper body",
+    end: "2026-03-14 18:55",
+    minutes: 50,
+    exercises: "Bench press: 8 x 60 kg\nRow: 10 x 50 kg",
     sets: 2,
-    volume: 500,
+    volume: 980,
   });
 });
 
@@ -49,7 +49,7 @@ test("sets: warm-ups, drop sets, failure, RPE, bodyweight, time, distance, assis
 
 test("exercises keep Hevy's order; supersets are numbered; notes follow; volume leaves warm-ups out", () => {
   const w = {
-    ...neck, description: "Felt strong.\nSlept well.",
+    ...upperBody, description: "Felt strong.\nSlept well.",
     exercises: [
       { index: 1, title: "Row", notes: "slow\n eccentric", superset_id: 7, sets: [{ index: 0, type: "normal", weight_kg: 50, reps: 10 }] },
       { index: 0, title: "Bench Press (Barbell)", notes: null, superset_id: 7, sets: [{ index: 1, type: "normal", weight_kg: 60, reps: 10 }, { index: 0, type: "warmup", weight_kg: 40, reps: 12 }] },
@@ -61,21 +61,21 @@ test("exercises keep Hevy's order; supersets are numbered; notes follow; volume 
   assert.equal(r.sets, 3);
   assert.equal(r.volume, 1100);
   assert.equal(r.notes, "Felt strong.\nSlept well.");
-  assert.equal(r.when, "2026-10-23 22:52");
+  assert.equal(r.when, "2026-03-14 17:05");
 });
 
 test("a workout with no end has no end and no minutes; no title is 'Workout'", () => {
-  const r = rowData({ ...neck, title: "", end_time: null }, { tz: "UTC" });
+  const r = rowData({ ...upperBody, title: "", end_time: null }, { tz: "UTC" });
   assert.equal(r.end, undefined);
   assert.equal(r.minutes, undefined);
   assert.equal(r.workout, "Workout");
 });
 
 test("cells compare the way the notebook's table writes them", () => {
-  assert.ok(same("2026-10-24 00:52", "2026-10-24T00:52"));
+  assert.ok(same("2026-03-14 18:05", "2026-03-14T18:05"));
   assert.ok(same(10, "10"));
   assert.ok(same(undefined, ""));
-  assert.ok(!same("Neck workout", "Neck day"));
+  assert.ok(!same("Upper body", "Upper day"));
   assert.ok(same("a\r\nb", "a\nb"));
 });
 
