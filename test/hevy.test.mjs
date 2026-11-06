@@ -52,7 +52,7 @@ test("a refused key, a server error and an answer of an unknown shape are three 
 });
 
 test("the shape check: what Hevy's documentation and its real answers hold passes, anything else is 'changed'", () => {
-  const ok = { id: "w1", title: "A", description: null, start_time: "2026-10-23T22:52:48+00:00", end_time: null, exercises: [{ index: 0, title: "X", notes: null, superset_id: null, sets: [{ index: 0, type: "normal", weight_kg: 10, reps: 40, distance_meters: null, duration_seconds: null, rpe: null, custom_metric: null }] }] };
+  const ok = { id: "w1", title: "A", description: null, start_time: "2026-10-23T16:05:48+00:00", end_time: null, exercises: [{ index: 0, title: "X", notes: null, superset_id: null, sets: [{ index: 0, type: "normal", weight_kg: 10, reps: 40, distance_meters: null, duration_seconds: null, rpe: null, custom_metric: null }] }] };
   assert.equal(checkWorkout(ok), ok);
   assert.throws(() => checkWorkout({ ...ok, start_time: "soon" }), (e) => e.kind === "changed");
   assert.throws(() => checkWorkout({ ...ok, exercises: [{ ...ok.exercises[0], sets: [{ reps: "40" }] }] }), (e) => e.kind === "changed" && /reps/.test(e.message));

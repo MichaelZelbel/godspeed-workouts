@@ -8,7 +8,7 @@
   person's computer is left: the installers look for Godspeed in its documented default folders
   (`~/godspeed-v2`, `~/godspeed`, or the folder named by `--godspeed`), and the tests use an
   example path. The README points to Godspeed's Settings as the way in. The full history was
-  scanned for secrets (gitleaks 8.30.1, six commits, none found).
+  scanned for secrets (gitleaks 8.30.1, every commit on every branch, none found).
 
 ## 0.1.1 (24 October 2026)
 
