@@ -1,0 +1,76 @@
+name: required
+# The one check main requires: nothing reaches main except through a pull request whose
+# `required` check passed. That check name is what the main-branch rule names.
+#
+# Job `suite` runs the fast tests and the real-notebook test on every pull request. Job `required`
+# asks the two questions, each answered with one plain line, in .github/workflows/required-gate.mjs
+# (the same file as in MichaelZelbel/godspeed-mission-control, where it is maintained): every other
+# check on this commit passed, and on a pull request a reviewer listed in the repository variable
+# REQUIRED_REVIEWERS approved this commit, or Archon's review verdict from a login in
+# .archon/sdlc/policy/maintainers.json says ready for it. Everything here only reads. The gate lives
+# inside .github/workflows/ on purpose: only a key with GitHub's `workflows` permission may change
+# files there.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  checks: read
+  actions: read
+  pull-requests: read
+  statuses: read
+  # the pull request's conversation comments, where Archon publishes its review verdict
+  issues: read
+jobs:
+  suite:
+    name: suite
+    if: github.event_name != 'pull_request_review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: MichaelZelbel/godspeed-mission-control
+          path: product
+          persist-credentials: false
+      # Outside this repository, or the product's CommonJS tools would read this package.json's
+      # "type": "module" and the notebook would not start.
+      - run: mv product "$RUNNER_TEMP/product"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.19"
+      - name: The gate proves itself
+        run: |
+          node .github/workflows/required-gate.mjs --self-test
+          node .github/workflows/required-on-verdict.mjs --self-test
+      - run: node --test "test/*.test.mjs"
+        env:
+          GODSPEED_NOTEBOOK_CHECKOUT: ${{ runner.temp }}/product
+  required:
+    name: required
+    needs: suite
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Every other check on this commit passed, and a listed reviewer approved it
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REQUIRED_REVIEWERS: ${{ vars.REQUIRED_REVIEWERS }}
+        run: node .github/workflows/required-gate.mjs
