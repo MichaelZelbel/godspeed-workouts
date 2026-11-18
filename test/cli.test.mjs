@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -13,9 +14,9 @@ import { KEY, workout } from "./fakes/hevy.mjs";
 
 const BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "bin", "godspeed-workouts.mjs");
 // The command as its own process. Not spawnSync: the pretend Hevy answers from this process.
-function cmd(args, { input = "", env }) {
+function cmd(args, { input = "", env, cwd }) {
   return new Promise((resolve) => {
-    const c = spawn(process.execPath, [BIN, ...args], { env, stdio: ["pipe", "pipe", "pipe"] });
+    const c = spawn(process.execPath, [BIN, ...args], { env, cwd, stdio: ["pipe", "pipe", "pipe"] });
     let stdout = "", stderr = "";
     c.stdout.on("data", (d) => { stdout += d; });
     c.stderr.on("data", (d) => { stderr += d; });
@@ -74,8 +75,64 @@ test("connect takes the key from standard input, checks it with Hevy, and never 
   } finally { await w.close(); }
 });
 
+test("connect while Hevy does not answer saves no key, says so, and starts no run", async () => {
+  const w = await world({ key: null });
+  try {
+    w.hevy.fh.down = true;
+    const env = { ...process.env, ...w.env, GODSPEED_WORKOUTS_STATE: w.paths.root };
+    delete env.HEVY_API_KEY;
+    const r = await cmd(["connect"], { input: `${KEY}\n`, env });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /Hevy did not answer just now \(Hevy answered 500\), so the key was not saved\. Try again in a while: godspeed-workouts connect/);
+    assert.doesNotMatch(r.stdout + r.stderr, /Hevy key saved|Run:/);
+    assert.equal(fs.existsSync(w.paths.hevy), false, "no key file is written");
+    assert.equal(fs.existsSync(w.paths.state), false, "no run started");
+    const st = await cmd(["status"], { env });
+    assert.match(st.stdout, /Hevy key: none \(godspeed-workouts connect\)/);
+  } finally { await w.close(); }
+});
+
+test("setup with a new key while Hevy does not answer keeps the earlier key and still finishes", async () => {
+  const w = await world();
+  const home = tmp("home");
+  try {
+    const before = fs.readFileSync(w.paths.hevy);
+    w.hevy.fh.down = true;
+    const env = { ...process.env, ...w.env, GODSPEED_WORKOUTS_STATE: w.paths.root, GODSPEED_WORKOUTS_APP: path.join(home, "app"), HOME: home, USERPROFILE: home, HEVY_API_KEY: "11111111-1111-4111-8111-111111111111" };
+    const r = await cmd(["setup", "--no-run", "--no-schedule"], { env, cwd: home });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /Hevy did not answer just now \(Hevy answered 500\), so the key was not kept\. Try again in a while: godspeed-workouts connect/);
+    assert.doesNotMatch(r.stdout, /Hevy key saved|checked at the first run|No Hevy key yet/);
+    assert.match(r.stdout, /^Command: /m);
+    assert.deepEqual(fs.readFileSync(w.paths.hevy), before, "the earlier key stays byte for byte");
+  } finally { await w.close(); fs.rmSync(home, { recursive: true, force: true }); }
+});
+
 test("help names every command", async () => {
   const out = [];
   assert.equal(await main(["help"], { print: (s) => out.push(s) }), 0);
   for (const c of ["setup", "connect", "run", "status", "settings", "uninstall"]) assert.match(out.join("\n"), new RegExp(`^  ${c} `, "m"));
+});
+
+test("uninstall returns a failure when the scheduler refuses removal", { skip: process.platform === "win32" && "a POSIX script cannot stand in for powershell.exe on Windows; the real script is run in schedule.test.mjs" }, async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "godspeed-workouts-uninstall-"));
+  const bin = path.join(root, "bin");
+  const platform = Object.getOwnPropertyDescriptor(process, "platform");
+  const oldPath = process.env.PATH;
+  try {
+    fs.mkdirSync(bin);
+    const command = path.join(bin, "powershell.exe");
+    fs.writeFileSync(command, "#!/bin/sh\necho 'scheduler refused removal' >&2\nexit 1\n");
+    fs.chmodSync(command, 0o755);
+    Object.defineProperty(process, "platform", { ...platform, value: "win32" });
+    process.env.PATH = bin + path.delimiter + oldPath;
+    const out = [];
+    const code = await main(["uninstall", "--state", root], { env: { ...process.env, PATH: bin + path.delimiter + process.env.PATH }, print: (line) => out.push(line) });
+    assert.equal(code, 1);
+    assert.match(out.join("\n"), /scheduler refused removal/);
+  } finally {
+    Object.defineProperty(process, "platform", platform);
+    process.env.PATH = oldPath;
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
